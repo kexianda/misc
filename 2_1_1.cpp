@@ -2,6 +2,11 @@
  * Author: Ke, Xianda
  * Date: 2014-01-05
  * */
+ 
+#if __cplusplus < 201103L
+	#error "should use c++11 implementation. please use -std=c++11 option"
+#endif
+ 
 #include<iostream>
 #include<stdio.h>
 
@@ -21,8 +26,5 @@ const char*  funName()
 }
 int main()
 {
-	#if __cplusplus < 201103L
-		#error "should use c++11 implementation. please use -std=c++11 option"
-   	#endif
 	cout<<funName()<<endl;
 }
