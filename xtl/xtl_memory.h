@@ -24,28 +24,25 @@
 #define _XTL_MEMORY_H
 
 #include <new>
-namespace xtl {
-	struct _true_type {};
-	struct _false_type {};
 
-	template <typename T>
-	struct _type_trait {
-		typedef  _false_type has_trivial_destructor;
-	};
+#include "xtl_type_trait.h"
+
+namespace xtl {
 	
 	template <typename T>
 	inline void construct (T* p){
-		new (p) T();
+		::new (p) T();
 	}
 	
 	template <typename T>
 	inline void copy_construct (T* p, const T& value) {
-		new (p) T (value);
+		::new (p) T (value);
 	} 
 	
 	template <typename T>
 	inline void _destory (T* p) {
-		delete p;
+		//delete p;
+		p->~T();
 	}
 	
 	template <typename FwdItr>

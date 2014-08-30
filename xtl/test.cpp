@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
-#include "xmemory.h"
+#include "xtl_memory.h"
 
 using namespace std;
 
@@ -22,25 +22,36 @@ namespace xtl_memeory_test {
 		vf.push_back(f1);
 	}
 	
-	void testMem (){
-		vector <Foo> vi;
+	void test_xtl_Memory (){
+		vector <Foo> vf;
+		vf.reserve (5);
 		for (int i=0; i<3; ++i){
-			vi.push_back (Foo());
+			Foo f;
+			vf.push_back (f);
 		}
-		auto itr = std::begin (vi);	
+		
+		auto itr = std::begin (vf);	
 		xtl::destory (itr, itr+2);
 
 		Foo arr[2];
 		Foo * p = arr;
 		xtl::construct (p);
 		xtl::construct (p+1);
-		xtl::destory (p, p+2);//[, )
+		xtl::destory (p, p+2);
+		
+		//nontrival
+		int intarr[5];
+		for(int i=0; i<5; ++i){
+			xtl::construct (intarr+i);
+		}
+		xtl::copy_construct (intarr, 100);
+		xtl::destory(intarr, intarr+4);
 	}
 }
 
 int main () {
 	
-	xtl_memeory_test::testMem ();
+	xtl_memeory_test::test_xtl_Memory();
 
 	return 0;
 }
