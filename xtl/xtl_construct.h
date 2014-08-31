@@ -20,10 +20,10 @@
  *   purpose.  It is provided "as is" without express or implied warranty.
  *  
  **/
-#ifndef _XTL_MEMORY_H
-#define _XTL_MEMORY_H
+#ifndef _XTL_CONSTRUCT_H
+#define _XTL_CONSTRUCT_H
 
-#include <new>
+#include <new> //replacement new
 
 #include "xtl_type_trait.h"
 
@@ -69,5 +69,5 @@ namespace xtl {
 	}
 	
 }
-#endif // _XTL_MEMORY_H
+#endif // _XTL_CONSTRUCT_H
 
