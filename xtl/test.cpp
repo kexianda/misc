@@ -5,53 +5,69 @@
 #include <vector>
 #include "xtl_memory.h"
 
+#ifdef __linux__
+#include <mcheck.h>
+#endif //__linux__
+
+#ifdef _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#endif //Windows CRT GBD
+
+
 using namespace std;
 
 struct Foo{
-	Foo () { std::cout<<"Foo()" << std::endl; }
+	Foo () {
+	   val = 5;
+   	   std::cout<<"Foo()" << std::endl; 
+	}
+	
 	int val;
-	~Foo () {std::cout<<"~Foo()"<<endl;}	
+	~Foo () {val = 0; std::cout<<"~Foo()"<<endl;}	
 };
 
 namespace xtl_memeory_test {
 	
-	void testStl () {
-	
-		std::vector<Foo> vf;
-		Foo f1;
-		vf.push_back(f1);
-	}
 	
 	void test_xtl_Memory (){
-		vector <Foo> vf;
-		vf.reserve (5);
-		for (int i=0; i<3; ++i){
-			Foo f;
-			vf.push_back (f);
-		}
 		
-		auto itr = std::begin (vf);	
-		xtl::destory (itr, itr+2);
+		xtl::allocator<Foo> fooAlloc;
+			
+		Foo* buff = fooAlloc.allocate (10); 
+		for (Foo* itr = buff; itr < buff+5; ++itr) {
+			xtl::construct (itr);
+		}
 
-		Foo arr[2];
-		Foo * p = arr;
-		xtl::construct (p);
-		xtl::construct (p+1);
-		xtl::destory (p, p+2);
-		
-		//nontrival
-		int intarr[5];
-		for(int i=0; i<5; ++i){
-			xtl::construct (intarr+i);
-		}
-		xtl::copy_construct (intarr, 100);
-		xtl::destory(intarr, intarr+4);
+		Foo f;
+		f.val = 888;
+		for (Foo* itr = buff+5; itr < buff+10; ++itr) {
+			xtl::copy_construct (itr, f); 
+		}		
+
+		xtl::destory(buff, buff+10); //[,)
+
+		fooAlloc.deallocate (buff);
 	}
 }
 
 int main () {
 	
+	#ifdef __linux__
+	//$./test.out
+	//$mtrace test.out memcheck.o > report.o
+	setenv ("MALLOC_TRACE", "memcheck.o", 1);
+	mtrace();
+	#endif //__linux__
+
+	
 	xtl_memeory_test::test_xtl_Memory();
 
-	return 0;
+
+	#ifdef __linux__
+	//muntrace();
+	#endif //__linux__
+
+	#ifdef _CRTDBG_MAP_ALLOC
+	_CrtDumpMemoryLeaks();
+	#endif //Windows CRT GBD	return 0;
 }

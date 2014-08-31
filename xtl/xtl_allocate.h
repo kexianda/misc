@@ -19,7 +19,8 @@ namespace xtl {
 	inline T* _allocate (ptrdiff_t size, T* ) {
 		T* tmp = (T*) malloc ( (size_t)(size * sizeof(T)) );
 		if (nullptr == tmp) {
-			throw std::bad_alloc; //use std::bad_alloc 
+			std::bad_alloc ba; //use std::bad_alloc 
+			throw ba;
 		}
 		return tmp;
 	}
@@ -54,7 +55,7 @@ namespace xtl {
 			return (pointer)&r;
 		}
 
-		const_pointer address (reference r) {
+		const_pointer const_address (reference r) {
 			return (const_pointer)&r;
 		}
 

@@ -46,12 +46,12 @@ namespace xtl {
 	}
 	
 	template <typename FwdItr>
-	inline void _destory_aux (FwdItr first, FwdItr last, _false_type) {
+	inline void _destory_aux (FwdItr first, FwdItr last, _true_type) {
 		//do nothing
 	}
 	
 	template <typename FwdItr>
-	inline void _destory_aux (FwdItr first, FwdItr last,  _true_type) {
+	inline void _destory_aux (FwdItr first, FwdItr last,  _false_type) {
 		for (; first < last; ++first) {
 			_destory (& *first);
 		}
