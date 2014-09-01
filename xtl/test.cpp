@@ -1,18 +1,20 @@
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
-#include <iostream>
-#include <vector>
-#include "xtl_memory.h"
 
-#ifdef __linux__
-#include <mcheck.h>
-#endif //__linux__
-
-#ifdef _CRTDBG_MAP_ALLOC
+#if defined(_WIN32) || defined(_WIN64) 
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
 #include <crtdbg.h>
 #endif //Windows CRT GBD
 
+#ifdef __linux__
+#include <cstdlib>
+#include <mcheck.h>
+#endif //__linux__
+
+#include <cstring>
+#include <cstdio>
+#include <iostream>
+#include <vector>
+#include "xtl_memory.h"
 
 using namespace std;
 
@@ -67,7 +69,9 @@ int main () {
 	//muntrace();
 	#endif //__linux__
 
-	#ifdef _CRTDBG_MAP_ALLOC
+	#if (defined(_WIN32) || defined(_WIN64)) && defined(_DEBUG)
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);  
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT); //_CRT_WARN
 	_CrtDumpMemoryLeaks();
 	#endif //Windows CRT GBD	return 0;
 }
