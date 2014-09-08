@@ -13,7 +13,7 @@
 #include <cstring>
 #include <cstdio>
 #include <iostream>
-#include <vector>
+#include "vector.h"
 #include "xtl_memory.h"
 
 using namespace std;
@@ -33,9 +33,9 @@ namespace xtl_memeory_test {
 	
 	void test_xtl_Memory (){
 		
-		xtl::allocator<Foo> fooAlloc;
+		typedef xtl::allocator<Foo> FooAlloc;
 			
-		Foo* buff = fooAlloc.allocate (10); 
+		Foo* buff = FooAlloc::allocate (10); 
 		for (Foo* itr = buff; itr < buff+5; ++itr) {
 			xtl::construct (itr);
 		}
@@ -48,8 +48,57 @@ namespace xtl_memeory_test {
 
 		xtl::destory(buff, buff+10); //[,)
 
-		fooAlloc.deallocate (buff);
+		FooAlloc::deallocate (buff);
 	}
+}
+namespace xtl_vector_test {
+	struct Foo {
+		Foo(int v) : val(v) {}
+		int val;
+	};
+	void test() {
+
+		typedef xtl::vector<Foo>	FooVector;
+		
+		
+		// constructors used in the same order as described above:
+		// empty vector of ints
+		FooVector first;                                
+		
+		// four ints with value 100
+		FooVector second (4, Foo(8));                       
+		
+		// iterating through second
+		//FooVector third (second.begin(), second.end());  
+		
+		//copy constructor
+		//FooVector fourth (third);                       
+  		
+		for(int i= 0; i<5; ++i){
+			//first.push_back(i);
+		}
+		
+		//test iterator, operator*,  operator->
+		for (FooVector::iterator itr = first.begin(); itr < first.end(); ++itr ) {
+			int tmp1 = (*itr).val;
+			int tmp2 = itr->val;
+			cout<<(tmp1 + tmp2)<<endl;
+		}
+
+		// the iterator constructor can also be used to construct from arrays:
+        //int myints[] = {16,2,77,29};
+		//FooVector fifth (myints, myints + sizeof(myints) / sizeof(int) );
+		//std::cout << "The contents of fifth are:";
+ 		//for (FooVector::iterator it = fifth.begin(); it != fifth.end(); ++it){
+		
+		//}
+ 		
+		//move constructor
+		
+		//initializer list constructor
+
+	}
+
 }
 
 int main () {
@@ -63,6 +112,8 @@ int main () {
 
 	
 	xtl_memeory_test::test_xtl_Memory();
+
+	xtl_vector_test::test();
 
 
 	#ifdef __linux__

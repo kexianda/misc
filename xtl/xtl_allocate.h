@@ -1,12 +1,15 @@
 /*
  *	@Author: Ke, Xianda
  *	@Date: 2014-08-31
- *	@Note: Just for fun
  *
- *	HP-Stlye allocators. Simple allocator, because  ms-crt / linux glibc will do the work.
+ *	HP-Stlye allocators. a simple allocator
+ *	no pool for small objects,  because  ms-crt / glibc will do the work. 
  *
  *
  * */
+#ifndef _XTL_ALLOCATOR_H
+#define _XTL_ALLOCATOR_H	1
+
 #include <cstdlib> //malloc, free
 #include <cstddef> //ptrdiff_t, size_t
 
@@ -43,28 +46,29 @@ namespace xtl {
 		typedef size_t		size_type;
 		typedef ptrdiff_t	difference_type;
 
-		pointer allocate (size_t n) {
+		static pointer allocate (size_t n) {
 			return _allocate (n, (pointer)(0));
 		}
 
-		void deallocate (pointer p) {
+		static void deallocate (pointer p) {
 			_deallocate (p);
 		}
 
-		pointer address (reference r) {
+		static pointer address (reference r) {
 			return (pointer)&r;
 		}
 
-		const_pointer const_address (reference r) {
+		static const_pointer const_address (reference r) {
 			return (const_pointer)&r;
 		}
 
-		size_type init_page_size () {
+		static size_type init_page_size () {
 			size_type a = size_type(1);
 			size_type b = size_type(4096/sizeof(value_type)) ;
 			return a > b ? a : b;
 		}
-		
 	};
 
 }//end of xtl
+
+#endif  /* _XTL_ALLOCATOR_H */
