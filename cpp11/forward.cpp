@@ -62,15 +62,15 @@ namespace TemplateArgumentDeduction {
 
 	/**
 	If the original P is a reference type, the deduced A (i.e., the type referred to by the reference) can be
-        more cv-qualified than the transformed A.
-            — The transformed A can be another pointer or pointer to member type that can be converted to the
-                deduced A via a qualification conversion (4.4).
-            — If P is a class and P has the form simple-template-id, then the transformed A can be a derived class of
-                the deduced A. Likewise, if P is a pointer to a class of the form simple-template-id, the transformed A
-                can be a pointer to a derived class pointed to by the deduced A.
-    */
+		more cv-qualified than the transformed A.
+			— The transformed A can be another pointer or pointer to member type that can be converted to the
+				deduced A via a qualification conversion (4.4).
+			— If P is a class and P has the form simple-template-id, then the transformed A can be a derived class of
+				the deduced A. Likewise, if P is a pointer to a class of the form simple-template-id, the transformed A
+				can be a pointer to a derived class pointed to by the deduced A.
+	*/
 
-    int&& getrvalue() { return 5;}
+	int&& getrvalue() { return 5;}
 
 
 	template <typename T> void fun_non_ref_param (T val) {
@@ -81,11 +81,11 @@ namespace TemplateArgumentDeduction {
 		cout<< val << endl;
 	}
 
-    template <typename T> void fun_ref_param (T& val) {
+	template <typename T> void fun_ref_param (T& val) {
 		cout << val << endl;
 	};
 
-    template <typename T> void fun_const_ref_param (const T val) {
+	template <typename T> void fun_const_ref_param (const T& val) {
 		cout<< val << endl;
 	}
 
@@ -103,17 +103,14 @@ namespace TemplateArgumentDeduction {
 
 	void test() {
 
-        const int const_int_argument = 1;
-        int int_lvalue_argument = 2;
-
-
-
+		const int const_int_argument = 1;
+		int int_lvalue_argument = 2;
 
 
 		fun_non_ref_param (int_lvalue_argument);
 		//no adjuestment, T ->  int
 
-        fun_non_ref_param (const_int_argument);
+		fun_non_ref_param (const_int_argument);
 		//P is T, (no adjustment for non-ref-parameter P),
 		//A is 'const int', transformed A is 'int' (rule 1.3)
 		// deducted A = transformed A, so T is 'int', call: fun_non_ref_param <int> (int)
@@ -125,40 +122,40 @@ namespace TemplateArgumentDeduction {
 		fun_const_param (const_int_argument);
 		fun_const_param ( (1));
 
-        //2.2 if P is a reference type, the type referred by P is used for type deduction
-        fun_ref_param (int_lvalue_argument); //call fun_ref_param<int>(int)
-        fun_ref_param (const_int_argument); //call fun_ref_param <const int>(const int)
-        //fun_ref_param ((1));    //error expects an l-value
+		//2.2 if P is a reference type, the type referred by P is used for type deduction
+		fun_ref_param (int_lvalue_argument); //call fun_ref_param<int>(int&)
+		fun_ref_param (const_int_argument); //call fun_ref_param <const int>(const int&)
+		//fun_ref_param ((1));	//error expects an l-value
 
 
-        //If the original P is a reference type, the deduced A (i.e., the type referred to by the reference) can be
-        //more cv-qualified than the transformed A.
-        fun_const_ref_param (int_lvalue_argument); //call fun_ref_param<int>(int)
-        fun_const_ref_param (const_int_argument); //call fun_ref_param <int>(const int)
-        fun_const_ref_param ((1));    //call func_ref_param <int> (int)
+		//If the original P is a reference type, the deduced A (i.e., the type referred to by the reference) can be
+		//more cv-qualified than the transformed A.
+		fun_const_ref_param (int_lvalue_argument); //call fun_ref_param<int>(const int&)
+		fun_const_ref_param (const_int_argument); //call fun_ref_param <int>(const int&)
+		fun_const_ref_param ((1));	//call func_ref_param <int> (const int&)
 
 
 		/*
 
-        fun_const_param  (int_lvalue);
-        fun_const_param  (int_lvalue_ref);
-        fun_const_param  (const_int_argument);
+		fun_const_param  (int_lvalue);
+		fun_const_param  (int_lvalue_ref);
+		fun_const_param  (const_int_argument);
 
-        // 2.2 P is reference type,
-        fun_ref_param  (int_lvalue); //transformed A is 'int',  so T is 'int', call fun_ref_param<T> (int&)
-        fun_ref_param  (int_lvalue_ref);
-        fun_ref_param  (const_int_argument);// T is 'const int' call fun_ref_param<int const> (const int)
+		// 2.2 P is reference type,
+		fun_ref_param  (int_lvalue); //transformed A is 'int',  so T is 'int', call fun_ref_param<T> (int&)
+		fun_ref_param  (int_lvalue_ref);
+		fun_ref_param  (const_int_argument);// T is 'const int' call fun_ref_param<int const> (const int)
 
-        //fun_ref_param ( (2*3)); //error! expected lvalue
-        int&& rvalref = 5;
-        fun_ref_param (rvalref); // name rvalref is lvalue
+		//fun_ref_param ( (2*3)); //error! expected lvalue
+		int&& rvalref = 5;
+		fun_ref_param (rvalref); // name rvalref is lvalue
 
 		// 2.2
 		fun_rvalue_ref_param (int_lvalue);
 		//P is T&&, deducted A is T
 		//A is lvalue, transformed A is int&
 		//so, T is int&.  call fun_rvalue_ref_param<int&) (int&)
-        */
+		*/
 
 	}
 }
