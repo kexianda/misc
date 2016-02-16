@@ -1,5 +1,5 @@
 test : gcm.c
-	gcc -std=gnu99 -O2 -lssl -lcrypto gcm.c -o test -lrt
+	gcc -std=gnu99 -O2 gcm.c -o test -lrt -lssl -lcrypto
 .PHONY : clean
 clean : 
 	-rm *.o test
