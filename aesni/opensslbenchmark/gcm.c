@@ -192,6 +192,146 @@ int test_gcm() {
 			outbuf, tag);	
 }
 
+void printResult(const char*mode, int total_size, int chunk_size, int key_len_in_bytes, double interval_sec) {
+
+
+	printf("OpenSSL %s Encryption(Total=%dMB, key=%dbits, Chunk=%3d%s)\tthroughput= %.2fMB/s.\n", 
+			mode,
+			total_size/(1024*1024), 
+			key_len_in_bytes * 8, 
+			chunk_size>=1024*1024 ? chunk_size/(1024*1024) : chunk_size/1024, 
+			chunk_size>=1024*1024 ? "MB" : "KB",
+			(double)total_size/(1024*1024*interval_sec) );
+}
+
+/* return sonsumed time in seconds*/
+double ctr_encrypt_benchmark(int total_size, int chunk_size, int key_len_in_bytes) {
+
+	int chunk_num = total_size/chunk_size;
+
+	UCHAR* key = (UCHAR*) malloc(sizeof(UCHAR) * key_len_in_bytes);
+	UCHAR* iv = (UCHAR*) malloc(sizeof(UCHAR) * 16);
+	UCHAR* aad = (UCHAR*) malloc(sizeof(UCHAR) * 16);
+	int aad_len = 16;
+
+	UCHAR** plaintext_arr = (UCHAR**)malloc(sizeof(UCHAR*) * chunk_num);
+	for(int i=0; i < chunk_num; i++) {
+		plaintext_arr[i] = (UCHAR*) malloc(sizeof(UCHAR) * chunk_size);
+	}
+
+	UCHAR* ciphertext = (UCHAR*) malloc(sizeof(UCHAR) * (total_size + 16));
+	UCHAR* tag = (UCHAR*) malloc(sizeof(UCHAR) * 16);
+	if(key == NULL || iv == NULL || aad == NULL || plaintext_arr == NULL || ciphertext == NULL || tag == NULL) {
+		return 1;
+	}
+	
+	//random initialization
+	time_t t;
+ 	srand((unsigned) time(&t));
+	for (int i = 0; i < key_len_in_bytes; ++i){
+		key[i]=(UCHAR) (rand() % 256);
+	}
+	for (int i = 0; i < 16; ++i) {
+		iv[i]=(UCHAR) (rand() % 256);
+	}
+	for (int i = 0; i < 16; ++i) {
+		aad[i]=(UCHAR) (rand() % 256);
+	}
+	for(int i=0; i < chunk_num; i++) {
+		for(int j=0; j<chunk_size; j++)
+			plaintext_arr[i][j] = (UCHAR) (rand() % 256);
+	}
+	
+	EVP_CIPHER_CTX *ctx;
+	int len;
+	int ciphertext_len;
+
+	/* Create and initialise the context */
+	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+	/* Initialise the encryption operation. */
+	if(key_len_in_bytes == 32) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ctr(), NULL, NULL, NULL))
+			handleErrors();
+	}
+	if(key_len_in_bytes == 24) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_192_ctr(), NULL, NULL, NULL))
+			handleErrors();
+	}
+	if(key_len_in_bytes == 16) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_ctr(), NULL, NULL, NULL))
+			handleErrors();
+	}
+
+	/* Set IV length if default 12 bytes (96 bits) is not appropriate */
+	//if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, 16, NULL))
+	//	handleErrors();
+
+	/* Initialise key and IV */
+	if(1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) handleErrors();
+
+	/* Provide any AAD data. This can be called zero or more times as
+	 * required
+	 */
+	//if(1 != EVP_EncryptUpdate(ctx, NULL, &len, aad, aad_len))
+	//	handleErrors();
+
+	//Only accumulate encryption & ghash time
+
+	struct timespec start_time, end_time;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+	// Encryption 	
+	for (int i = 0; i < chunk_num ; ++i) {
+		if(1 != EVP_EncryptUpdate(ctx, ciphertext + i*chunk_size, &len, plaintext_arr[i], chunk_size)) handleErrors();
+		ciphertext_len += len;
+	}
+	if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + total_size, &len)) handleErrors();
+	ciphertext_len += len;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+
+	double interval_sec  = timediff(start_time.tv_sec, start_time.tv_nsec, end_time.tv_sec, end_time.tv_nsec);
+	
+	/* Get the tag */
+	//if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag))
+	//	handleErrors();
+
+	/* Clean up */
+	EVP_CIPHER_CTX_free(ctx);
+
+	/* clean ------*/
+	free(key);
+	free(iv);
+	free(aad);
+	free(ciphertext);
+	free(tag);
+	for(int i=0; i< chunk_num; i++) {
+		free(plaintext_arr[i]);
+	}
+	free(plaintext_arr);
+
+	return interval_sec;
+}
+int ctr_throughput(){
+
+	double interval_sec = 0.0;
+	int total_size = 1024*1024*1024;
+	int chunk_size_arr[3] = {1024*16,	1024*1024,	1024*1024*32};
+	int key_len_arr[3] = {16, 24, 32};
+	int itr_num = 3;
+
+	for(int k=0; k<3; k++) { // key length
+		for(int i=0; i<3; i++) { // chunk size
+			interval_sec = 0.0;
+			for(int itr = 0; itr<itr_num; itr++) { 
+				interval_sec += ctr_encrypt_benchmark(total_size, chunk_size_arr[i], key_len_arr[k]);
+			}
+			printResult("CTR", total_size, chunk_size_arr[i], key_len_arr[k], interval_sec/itr_num);
+		}
+	}
+
+	return 0;	
+}
+
 /* return sonsumed time in seconds*/
 double gcm_encrypt_benchmark(int total_size, int chunk_size, int key_len_in_bytes) {
 
@@ -300,16 +440,7 @@ double gcm_encrypt_benchmark(int total_size, int chunk_size, int key_len_in_byte
 	return interval_sec;
 }
 
-void printResult(int total_size, int chunk_size, int key_len_in_bytes, double interval_sec) {
 
-
-	printf("OpenSSL GCM Encryption(Total=%dMB, key=%dbits, Chunk=%3d%s)\tthroughput= %.2fMB/s.\n", 
-			total_size/(1024*1024), 
-			key_len_in_bytes * 8, 
-			chunk_size>=1024*1024 ? chunk_size/(1024*1024) : chunk_size/1024, 
-			chunk_size>=1024*1024 ? "MB" : "KB",
-			(double)total_size/(1024*1024*interval_sec) );
-}
 
 int gcm_throughput(){
 
@@ -325,7 +456,7 @@ int gcm_throughput(){
 			for(int itr = 0; itr<itr_num; itr++) { 
 				interval_sec += gcm_encrypt_benchmark(total_size, chunk_size_arr[i], key_len_arr[k]);
 			}
-			printResult(total_size, chunk_size_arr[i], key_len_arr[k], interval_sec/itr_num);
+			printResult("GCM", total_size, chunk_size_arr[i], key_len_arr[k], interval_sec/itr_num);
 		}
 	}
 
@@ -344,6 +475,7 @@ int main (void)
 	warm_up();
 
 	gcm_throughput();
+	ctr_throughput();
 
 	return 0;
 }
