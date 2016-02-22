@@ -1,3 +1,4 @@
-test
+Miscellaneous
 ====
-Cpp 11 features testing
+a miscellaneous folder for script, prototyping or testing.
+
