@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+# usage
+# bash runpig --exectype=spark --debug=true  [*.pig|*.py|*.js]
+# bash runpig --exectype=mapreduce --debug=false suspend=n
+
+#------------------------------------
+bash setup.sh
+#------------------------------------
+
+
+debug=true
+exectype=spark
+suspend=y
+
+for arg in "$@";do
+	case $arg in 
+	--exectype*)
+		exectype=$(echo $arg | cut -d"=" -f2) 
+	;;
+	--debug*)
+		debug=$(echo $arg | cut -d"=" -f2)
+	;;
+	*.pig | *.js )
+		pigfile=$arg	
+	;;
+	*.py )
+		pigfile=$arg
+		scriptEngine=" -g jython "		
+		PIG_OPTS=" -Dpython.cachedir=/home/xiandake/tmp/cachedir "${PIG_OPTS}
+	;;
+	suspend)
+		suspend=$(echo $arg | cut-d"=" -f2)
+	;;
+	esac
+done
+ 
+if [ $debug != "false" ]; then
+export HADOOP_OPTS=${PIG_OPTS}" -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend="${suspend}",address=9999"
+fi
+
+
+# ---------------------------------------------------
+# PIG_OPTS=" -Dpig.disable.counter=true "
+echo "pig ${PIG_OPTS} -x $exectype $scriptEngine $pigfile"
+pig -x $exectype $scriptEngine $pigfile
+#----------------------------------------------------
+
+#----------------------------------------------------
+unset HADOOP_OPTS
+#bash teardown.sh
+
+#----------------------------------------------------
