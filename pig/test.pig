@@ -2,10 +2,10 @@
 --REGISTER 'hdfs://myudfs.jar';
 REGISTER myudfs.jar;
 A = LOAD 'mjtest.txt' using myudfs.DummyCollectableLoader() as (id, name, grade);
-B = LOAD 'mjtest.txt' using myudfs.DummyCollectableLoader() as (id, name, grade);
+B = LOAD 'mjright.txt' using myudfs.DummyCollectableLoader() as (id, name, grade);
 C = join A by id, B by id using 'merge';
-D = group C by A::id using 'collected';
-dump D;
+--D = group C by A::id using 'collected';
+dump C;
 
 
 --testGetHadoopCounters
