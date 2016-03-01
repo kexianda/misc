@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+rm pig_*.log
 hadoop fs -rm -r /user/xiandake/output
 #hadoop fs -rm -r /user/xiandake/output2
 #hadoop fs -rm -r /user/xiandake/output3

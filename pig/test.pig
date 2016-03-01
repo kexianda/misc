@@ -1,12 +1,29 @@
 --TestCollectedGroup
 --REGISTER 'hdfs://myudfs.jar';
 REGISTER myudfs.jar;
-A = LOAD 'mjtest.txt' using myudfs.DummyCollectableLoader() as (id, name, grade);
-B = LOAD 'mjright.txt' using myudfs.DummyCollectableLoader() as (id, name, grade);
-C = join A by id, B by id using 'merge';
---D = group C by A::id using 'collected';
+--A = LOAD 'mjtest.txt' USING myudfs.DummyCollectableLoader() AS (id, name, grade);
+--B = LOAD 'mjright.txt' USING myudfs.DummyCollectableLoader() AS (id, name, grade);
+--C = JOIN A BY id, B BY id USING 'merge';  --merge join
+--D = GROUP C BY A::id USING 'collected';
+--DUMP C;
+--merge join test case 2
+A = LOAD 'mcgleft.txt' using myudfs.DummyCollectableLoader() as (c1:chararray, c2:int);
+B = LOAD 'mcgright.txt' using myudfs.DummyIndexableLoader()  as (c1:chararray, c2:int);
+C = JOIN A BY c1, B BY c1 using 'merge';
 dump C;
 
+--merge cogroup---------
+--A = LOAD 'mcgleft.txt' using myudfs.DummyCollectableLoader() as (c1:chararray, c2:int);
+--B = LOAD 'mcgright.txt' using myudfs.DummyIndexableLoader()  as (c1:chararray, c2:int);
+--C = COGROUP A BY c1, B BY c1 using 'merge';
+--dump C;
+
+
+--FRJoin
+--A = LOAD 'mjtest.txt' as (id, name , grade);
+--B = LOAD 'mjright.txt' as (id, name, grade);
+--C = JOIN A by (id, name), B by (id, name) using 'replicated';
+--dump C;
 
 --testGetHadoopCounters
 --A = load 'input' as (a0:int, a1:int, a2:int);
