@@ -21,6 +21,9 @@ for arg in "$@";do
 	--debug*)
 		debug=$(echo $arg | cut -d"=" -f2)
 	;;
+	-D*)
+		PIG_OPTS=${PIG_OPTS}" "${arg}
+	;;
 	*.pig | *.js )
 		pigfile=$arg	
 	;;
@@ -43,7 +46,7 @@ fi
 # ---------------------------------------------------
 # PIG_OPTS=" -Dpig.disable.counter=true "
 echo "pig ${PIG_OPTS} -x $exectype $scriptEngine $pigfile"
-pig -x $exectype $scriptEngine $pigfile
+pig ${PIG_OPTS} -x $exectype $scriptEngine $pigfile
 #----------------------------------------------------
 
 #----------------------------------------------------
