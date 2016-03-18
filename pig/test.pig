@@ -1,16 +1,27 @@
 --TestCollectedGroup
 --REGISTER 'hdfs://myudfs.jar';
 REGISTER myudfs.jar;
+A = LOAD 'collectedgroup1' USING myudfs.DummyCollectableLoader() AS (id);
+B = GROUP A by $0 USING 'collected';
+C = GROUP B by $0 USING 'collected';
+DUMP C;
+
+--watching endOfAllInput in POForEach
+--A = LOAD 'collectedgroup1' USING myudfs.DummyCollectableLoader() AS (id);
+--B = FOREACH A GENERATE $0;
+--C = GROUP B by $0 USING 'collected';
+--DUMP C;
+
 --A = LOAD 'mjtest.txt' USING myudfs.DummyCollectableLoader() AS (id, name, grade);
 --B = LOAD 'mjright.txt' USING myudfs.DummyCollectableLoader() AS (id, name, grade);
---C = JOIN A BY id, B BY id USING 'merge';  --merge join
+--C = JOIN A BY id, B BY id  USING 'merge';  --merge join
 --D = GROUP C BY A::id USING 'collected';
---DUMP C;
+--DUMP D;
 --merge join test case 2
-A = LOAD 'mcgleft.txt' using myudfs.DummyCollectableLoader() as (c1:chararray, c2:int);
-B = LOAD 'mcgright.txt' using myudfs.DummyIndexableLoader()  as (c1:chararray, c2:int);
-C = JOIN A BY c1, B BY c1 using 'merge';
-dump C;
+--A = LOAD 'mcgleft.txt' using myudfs.DummyCollectableLoader() as (c1:chararray, c2:int);
+--B = LOAD 'mcgright.txt' using myudfs.DummyIndexableLoader()  as (c1:chararray, c2:int);
+--C = JOIN A BY c1, B BY c1 using 'merge';
+--dump C;
 
 --merge cogroup---------
 --A = LOAD 'mcgleft.txt' using myudfs.DummyCollectableLoader() as (c1:chararray, c2:int);
