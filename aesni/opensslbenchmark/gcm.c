@@ -62,6 +62,10 @@ int gcm_encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad,
 	/* Initialise key and IV */
 	if(1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) handleErrors();
 
+	//just for testing
+	//if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv_len, NULL))
+    //	handleErrors();
+
 	/* Provide any AAD data. This can be called zero or more times as
 	 * required
 	 */
@@ -141,8 +145,8 @@ int gcm_decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aa
 	plaintext_len = len;
 
 	/* Set expected tag value. Works in OpenSSL 1.0.1d and later */
-	if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tag))
-		handleErrors();
+	//if(!EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, 16, tag))
+	//	handleErrors();
 
 	/* Finalise the decryption. A positive return value indicates success,
 	 * anything else is a failure - the plaintext is not trustworthy.
@@ -197,13 +201,67 @@ int test_gcm() {
 		0x98, 0xf7, 0x7e, 0x0c
 	};
 	
-	unsigned char outbuf[1024];
-	unsigned char tag[32];
+	unsigned char outbuf[1024]={0};
+	unsigned char tag[32]={0};
 
 	gcm_encrypt(gcm_pt, sizeof(gcm_pt), gcm_aad,
 			sizeof(gcm_aad), gcm_key, sizeof(gcm_key), gcm_iv, 12,
 			outbuf, tag);	
 }
+
+int nist_gcm_case5() {
+
+	//16 * 8
+	unsigned char gcm_key[] = {
+		0xfe,0xff,0xe9,0x92,0x86,0x65,0x73,0x1c,0x6d,0x6a,0x8f,0x94,0x67,0x30,0x83,0x08
+	};
+
+	//60 * 8
+	unsigned char gcm_iv[] = { //cafebabefacedbad
+		0x93,0x13,0x22,0x5d,0xf8,0x84,0x06,0xe5,0x55,0x90,0x9c,0x5a,0xff,0x52,0x69,0xaa,
+	};
+
+	unsigned char gcm_pt[] = {
+		0xd9,0x31,0x32,0x25,0xf8,0x84,0x06,0xe5,0xa5,0x59,0x09,0xc5,0xaf,0xf5,0x26,0x9a,
+        0x86,0xa7,0xa9,0x53,0x15,0x34,0xf7,0xda,0x2e,0x4c,0x30,0x3d,0x8a,0x31,0x8a,0x72,
+        0x1c,0x3c,0x0c,0x95,0x95,0x68,0x09,0x53,0x2f,0xcf,0x0e,0x24,0x49,0xa6,0xb5,0x25,
+        0xb1,0x6a,0xed,0xf5,0xaa,0x0d,0xe6,0x57,0xba,0x63,0x7b,0x39
+	};
+
+	unsigned char gcm_aad[] = {
+		0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef,0xfe,0xed,0xfa,0xce,0xde,0xad,0xbe,0xef
+        ,0xab,0xad,0xda,0xd2
+	};
+
+    /*"61353b4c2806934a777ff51fa22a4755"
+                + "699b2a714fcdc6f83766e5f97b6c7423"
+                + "73806900e49f24b22b097544d4896b42"
+                + "4989b5e1ebac0f07c23f4598";
+    */
+	unsigned char gcm_ct[] = {
+		0x8c,0xe2,0x49,0x98,0x62,0x56,0x15,0xb6,0x03,0xa0,0x33,0xac,0xa1,0x3f,0xb8,0x94,
+        0xbe,0x91,0x12,0xa5,0xc3,0xa2,0x11,0xa8,0xba,0x26,0x2a,0x3c,0xca,0x7e,0x2c,0xa7,
+        0x01,0xe4,0xa9,0xa4,0xfb,0xa4,0x3c,0x90,0xcc,0xdc,0xb2,0x81,0xd4,0x8c,0x7c,0x6f,
+        0xd6,0x28,0x75,0xd2,0xac,0xa4,0x17,0x03,0x4c,0x34,0xae,0xe5
+	};
+
+    // "3612d2e79e3b0785561be14aaca2fccb"
+	unsigned char gcm_tag[] = {
+		0x61,0x9c,0xc5,0xae,0xff,0xfe,0x0b,0xfa,0x46,0x2a,0xf4,0x3c,0x16,0x99,0xd0,0x50
+	};
+	
+	unsigned char outbuf[1024];
+	unsigned char tag[32];
+
+	gcm_encrypt(gcm_pt, sizeof(gcm_pt), gcm_aad,
+			sizeof(gcm_aad), gcm_key, sizeof(gcm_key), gcm_iv, 60,
+			outbuf, tag);
+
+	compareArray(outbuf, gcm_ct, 60);
+	compareArray(tag, gcm_tag, 16);
+}
+
+
 
 int nist_gcm_case6() {
 
@@ -293,9 +351,14 @@ int nist_gcm_case6_decrypt() {
 
 	unsigned char outbuf[1024] ={0};
 	unsigned char tag[32]={0};
+	
+	//tamper ...
+	gcm_ct[0] = gcm_ct[0] + 1;
 
-	gcm_decrypt(gcm_ct, sizeof(gcm_ct), gcm_aad, sizeof(gcm_aad), gcm_tag, gcm_key, sizeof(gcm_key), gcm_iv, sizeof(gcm_iv), outbuf);
-
+	int ret = gcm_decrypt(gcm_ct, sizeof(gcm_ct), gcm_aad, sizeof(gcm_aad), gcm_tag, gcm_key, sizeof(gcm_key), gcm_iv, sizeof(gcm_iv), outbuf);
+	if(ret < 0) {
+        printf("verify failed!\n");
+    }
 	compareArray(outbuf, gcm_pt, sizeof(gcm_pt));
 	//compareArray(tag, gcm_tag, 16);
 }
@@ -581,14 +644,14 @@ void warm_up() {
 
 int main (void)
 {
-	test_gcm();
-	//nist_gcm_case6();
+	//test_gcm();
+	nist_gcm_case6();
 	//warm_up();
 
 	//gcm_throughput();
 	//ctr_throughput();
 
-	nist_gcm_case6_decrypt();
+	//nist_gcm_case6_decrypt();
 
 	return 0;
 }
