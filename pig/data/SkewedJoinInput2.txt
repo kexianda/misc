@@ -1,0 +1,7 @@
+100	apple1
+100	apple2
+100	apple2
+200	orange1
+200	orange2
+300	strawberry
+400	pear
