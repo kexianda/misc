@@ -1,7 +1,7 @@
-100	apple1
-100	apple2
-100	apple2
-200	orange1
-200	orange2
+100	apple00001
+100	apple00002
+100	apple00002
+200	orange0001
+200	orange0002
 300	strawberry
-400	pear
+400	pear000000
