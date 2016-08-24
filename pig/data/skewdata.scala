@@ -9,13 +9,13 @@ for (i <- 0 to 100) {
 w.close()
 
 val w2 = new PrintWriter(new java.io.File("SkewedJoinInput2.txt" ))
-w2.write("100\tapple00001\n")
-w2.write("100\tapple00002\n")
-w2.write("100\tapple00002\n")
-w2.write("200\torange0001\n")
-w2.write("200\torange0002\n")
-w2.write("300\tstrawberry\n")
-w2.write("400\tpear000000\n")
+w2.write("100\tapple00001\ta\n")
+w2.write("100\tapple00002\ta\n")
+w2.write("100\tapple00002\ta\n")
+w2.write("200\torange0001\to\n")
+w2.write("200\torange0002\to\n")
+w2.write("300\tstrawberry\ts\n")
+w2.write("400\tpear000000\tp\n")
 w2.close()
 
 // for sampling
