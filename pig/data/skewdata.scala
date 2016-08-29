@@ -1,7 +1,7 @@
 import java.io._
-val w = new PrintWriter(new java.io.File("SkewedJoinInput1.txt" ))
+val w = new PrintWriter(new java.io.File("SkewedJoinInput_small.txt" ))
 
-for (i <- 0 to 100) {
+for (i <- 0 to 5) {
     w.write("300\tstrawberry\tsss" + (3*i) + "\n")
     w.write("200\torange0001\tooo" + (3*i+1) + "\n")
     w.write("300\tstrawberry\tsss" + (3*i+2) + "\n")

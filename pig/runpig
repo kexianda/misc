@@ -5,7 +5,7 @@
 # bash runpig --exectype=mapreduce --debug=false suspend=n
 
 #------------------------------------
-bash setup.sh
+#bash setup.sh
 #------------------------------------
 
 
