@@ -19,13 +19,35 @@ w2.write("400\tpear000000\tp\n")
 w2.close()
 
 // for sampling
-val w3= new PrintWriter(new java.io.File("SkewedJoinInput_1000.txt" ))
+val w1000= new PrintWriter(new java.io.File("SkewedJoinInput_1000.txt" ))
 val r = scala.util.Random
 
 for ( i <- 0 to 1000) {
 	(r.nextInt(100) % 3) match {
-	case 0 => w3.write("200\torange0001\tooo" + i + "\n")
-	case _ => w3.write("300\tstrawberry\tsss" + i + "\n")
+	case 0 => w1000.write("200\torange0001\tooo" + i + "\n")
+	case _ => w1000.write("300\tstrawberry\tsss" + i + "\n")
 	}
 }
+w1000.close()
+
+//---- TestSkewedJoin.testSkewedJoinOneValue()----
+// SkewedJoinInput3.txt
+val w3 = new PrintWriter(new java.io.File("SkewedJoinInput3.txt"))
+w3.println("100\tapple1")
+w3.println("100\tapple2")
+w3.println("200\torange1")
+w3.println("200\torange2")
+w3.println("300\tstrawberry")
+w3.println("300\tstrawberry2")
+w3.println("400\tpear")
 w3.close()
+val oneValue = new PrintWriter(new java.io.File("testSkewedjoinOneValue.pig"))
+oneValue.println("A = LOAD 'SkewedJoinInput3.txt' as (id, name);")
+oneValue.println("B = LOAD 'SkewedJoinInput3.txt' as (id, name);")
+oneValue.println("C = FILTER A by id == 400;")
+oneValue.println("D = FILTER B by id == 400;")
+oneValue.println("E = JOIN C by id, D BY id USING 'skewed';")
+oneValue.println("DUMP E;")
+oneValue.close()
+
+//---- TestSkewedJoin.testSkewedJoinEmptyInput() ----
