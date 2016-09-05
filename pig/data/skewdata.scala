@@ -51,3 +51,20 @@ oneValue.println("DUMP E;")
 oneValue.close()
 
 //---- TestSkewedJoin.testSkewedJoinEmptyInput() ----
+val wEmptyL = new PrintWriter(new java.io.File("SkewedJoinLeft.dat"))
+val wEmptyR = new PrintWriter(new java.io.File("SkewedJoinRight.dat"))
+wEmptyL.println("1")
+wEmptyL.println("2")
+wEmptyL.println("3")
+wEmptyL.println("5")
+wEmptyL.close()
+wEmptyR.println("1\tone")
+wEmptyR.println("2\ttwo")
+wEmptyR.println("3\tthree")
+wEmptyR.close()
+val empty = new PrintWriter(new java.io.File("testSkewedJoinEmptyInput.pig"))
+empty.println("a = load 'SkewedJoinLeft.dat' as (nums:chararray);");
+empty.println("b = load 'SkewedJoinRight.dat' as (number:chararray,text:chararray);");
+empty.println("c = filter a by nums == '7';");
+empty.println("d = join c by nums LEFT OUTER, b by number USING 'skewed';");
+empty.println("dump d;");
