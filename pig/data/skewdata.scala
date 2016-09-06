@@ -63,8 +63,9 @@ wEmptyR.println("2\ttwo")
 wEmptyR.println("3\tthree")
 wEmptyR.close()
 val empty = new PrintWriter(new java.io.File("testSkewedJoinEmptyInput.pig"))
-empty.println("a = load 'SkewedJoinLeft.dat' as (nums:chararray);");
-empty.println("b = load 'SkewedJoinRight.dat' as (number:chararray,text:chararray);");
-empty.println("c = filter a by nums == '7';");
-empty.println("d = join c by nums LEFT OUTER, b by number USING 'skewed';");
-empty.println("dump d;");
+empty.println("a = load 'SkewedJoinLeft.dat' as (nums:chararray);")
+empty.println("b = load 'SkewedJoinRight.dat' as (number:chararray,text:chararray);")
+empty.println("c = filter a by nums == '7';")
+empty.println("d = join c by nums LEFT OUTER, b by number USING 'skewed';")
+empty.println("dump d;")
+empty.close()
