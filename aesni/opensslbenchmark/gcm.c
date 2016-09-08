@@ -1,6 +1,8 @@
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/crypto.h>
+#include <openssl/opensslv.h>
 #include <string.h>
 
 //#ifdef __linux__
@@ -613,6 +615,108 @@ double gcm_encrypt_benchmark(int total_size, int chunk_size, int key_len_in_byte
 	return interval_sec;
 }
 
+double GMAC(UCHAR* data, int data_len){
+	int key_len_in_bytes = 16;
+
+	UCHAR* key = (UCHAR*) malloc(sizeof(UCHAR) * key_len_in_bytes);
+	UCHAR* iv = (UCHAR*) malloc(sizeof(UCHAR) * 12);
+
+	UCHAR* tag = (UCHAR*) malloc(sizeof(UCHAR) * 16);
+
+	if(key == NULL || iv == NULL || data == NULL || tag == NULL) {
+		return 0;
+	}
+	
+	//random initialization
+	time_t t;
+ 	srand((unsigned) time(&t));
+	for (int i = 0; i < key_len_in_bytes; ++i){
+		key[i]=(UCHAR) (rand() % 256);
+	}
+	for (int i = 0; i < 12; ++i) {
+		iv[i]=(UCHAR) (rand() % 256);
+	}
+	
+	EVP_CIPHER_CTX *ctx;
+	int len;
+
+	struct timespec start_time, end_time;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+
+	/* Create and initialise the context */
+	if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+
+	/* Initialise the encryption operation. */
+	if(key_len_in_bytes == 32) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL))
+			handleErrors();
+	}
+	if(key_len_in_bytes == 24) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_192_gcm(), NULL, NULL, NULL))
+			handleErrors();
+	}
+	if(key_len_in_bytes == 16) {
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_gcm(), NULL, NULL, NULL))
+			handleErrors();
+	}
+
+	/* Set IV length if default 12 bytes (96 bits) is not appropriate */
+	if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, 16, NULL))
+		handleErrors();
+
+	/* Initialise key and IV */
+	if(1 != EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv)) handleErrors();
+
+	/* Provide any AAD data. This can be called zero or more times as
+	 * required
+	 */
+	if(1 != EVP_EncryptUpdate(ctx, NULL, &len, data, data_len))
+		handleErrors();
+
+	if(1 != EVP_EncryptFinal_ex(ctx, NULL, &len)) handleErrors();
+
+	/* Get the tag */
+	if(1 != EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag))
+		handleErrors();
+
+	/* Clean up */
+	EVP_CIPHER_CTX_free(ctx);
+
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+	double interval_sec  = timediff(start_time.tv_sec, start_time.tv_nsec, end_time.tv_sec, end_time.tv_nsec);
+
+	/* clean ------*/
+	free(key);
+	free(iv);
+	free(tag);
+
+	return interval_sec;
+}
+//-----
+
+double GMAC_benchmark() {
+
+	time_t t;
+ 	srand((unsigned) time(&t));
+ 	
+ 	double interval_sec = 0.0;
+ 	int chunk_size = 1024*64; //64K
+ 	int itr_num = 1024;
+
+	for(int i = 0; i< itr_num; i++) {
+		int data_len = chunk_size;
+		UCHAR* data = (UCHAR*) malloc(sizeof(UCHAR) * data_len);
+		//random initialization
+		for (int i = 0; i < data_len; ++i){
+			data[i]=(UCHAR) (rand() % 256);
+		}
+
+		interval_sec += GMAC(data, data_len);
+
+		free (data);
+	}
+	printResult("GMAC", chunk_size * itr_num, chunk_size, 16, interval_sec);
+}
 
 
 int gcm_throughput(){
@@ -644,9 +748,18 @@ void warm_up() {
 
 int main (void)
 {
+	printf("%s\n",SSLeay_version(0));
+	printf("%s\n",SSLeay_version(1));
+	printf("%s\n",SSLeay_version(2));
+	printf("%s\n",SSLeay_version(3));
+	printf("%s\n",OPENSSL_VERSION_TEXT);
+	printf("0x%x\n",OPENSSL_VERSION_NUMBER);
+
 	//test_gcm();
 	nist_gcm_case6();
 	//warm_up();
+
+	GMAC_benchmark();
 
 	//gcm_throughput();
 	//ctr_throughput();
