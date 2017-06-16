@@ -9,3 +9,11 @@
 *.so
 *.out
 *.log
+
+### IDEA
+.idea/
+
+### Spark/Scala project
+spark-warehouse/
+target/
+project/

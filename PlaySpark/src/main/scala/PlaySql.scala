@@ -19,7 +19,7 @@ object PlaySql {
       //sc.hadoopConfiguration.setInt( "dfs.blocksize", blockSize)
       //sc.hadoopConfiguration.setInt( "parquet.block.size", blockSize *8)
 
-      val recordsSize = 1024 * 1024
+      val recordsSize = 1024
       val cal = Calendar.getInstance
 
       val salesRDD = spark.sparkContext.makeRDD( (1 to recordsSize).map(
@@ -32,13 +32,19 @@ object PlaySql {
           val price = 1000 + (r.nextDouble() * 100)
           val date = new java.sql.Date(cal.getTimeInMillis)
           Sales(name, item, quantity, price, price * quantity, date, date)
-        }))
+        }), 1)
 
       import spark.implicits._
       val salesDS = spark.sqlContext.createDataset(salesRDD)
       //salesDS.show()
 
+      //salesDS.write.partitionBy("doc_date").parquet("testdata.parquet")
       salesDS.write.partitionBy("doc_date").parquet("testdata.parquet")
+
+      val allSales = spark.read.parquet("testdata.parquet")
+      allSales.createOrReplaceTempView("sales")
+      val q1DF = spark.sql("SELECT * FROM sales WHERE doc_date = '2017-07-02' ")
+      q1DF.show()
     }
     catch {
       case e: Exception => println(e.getMessage)
