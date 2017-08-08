@@ -1,6 +1,7 @@
-; Intel format
+; Intel format ASM
 ; yasm -f elf64 xxx.s -o xxx.o
 ; Author: Ke, Xianda
+; to be tested
 
 section .data
 align 16
