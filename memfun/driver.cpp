@@ -82,11 +82,30 @@ void testMem() {
         memset(s2, '\0', origSize);
         
         memcpy(des, src, 7);
+        memset(s2, '\0', origSize);
+        memcpy(des, src, 8);
+        memset(s2, '\0', origSize);
+        
         memcpy(des, src, 15);
+        memset(s2, '\0', origSize);
+        memcpy(des, src, 16);
+        memset(s2, '\0', origSize);
+        
         memcpy(des, src, 31);
-        memcpy(des, src, 31);
+        memset(s2, '\0', origSize);        
+        memcpy(des, src, 32);
+        memset(s2, '\0', origSize);
+        
         memcpy(des, src, 63);
+        memset(s2, '\0', origSize);        
+        memcpy(des, src, 64);
+        memset(s2, '\0', origSize);
+        
         memcpy(des, src, 127);
+        memset(s2, '\0', origSize);        
+        memcpy(des, src, 128);
+        memset(s2, '\0', origSize);
+        
         memcpy(des, src, 254);
         memcpy(des, src, 511);
         memcpy(des, src, 2047);

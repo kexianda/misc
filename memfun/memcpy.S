@@ -15,14 +15,14 @@ _i_memcpy_256_unaligned:
     mov         rax,            rdi	; save return address
     cmp         rdx,            0x100 ; 256
     jae         L_ge_256	 ; if len >= 256 bytes
-    cmp         dl,            0x80 ; 128
-    jb          L_less_128bytes
+    cmp         dl,             0x80 ; 128
+    jb          L_lt_128bytes
     ;TODO  [128, 256)
 
 align 16
-L_less_128bytes:                       ; [64,128) bytes
+L_lt_128bytes:                       ; [64,128) bytes
     cmp         dl,             0x40 
-    jb          L_less_64bytes
+    jb          L_lt_64bytes
     vmovdqu     xmm0,		[rsi]  ; 16 bytes per time
     vmovdqu     xmm1,		[rsi + 0x10]
     vmovdqu     xmm2,		[rsi + 0x20]
@@ -42,9 +42,9 @@ L_less_128bytes:                       ; [64,128) bytes
     ret         ; TODO: compare ymm & zeroupper...
 
 align 16
-L_less_64bytes:
+L_lt_64bytes:
     cmp         dl,             0x20    ;
-    jb          L_less_32bytes
+    jb          L_lt_32bytes
     vmovdqu     xmm0,		[rsi]  ; 16 bytes per time
     vmovdqu     xmm1,		[rsi + 0x10]
     vmovdqu     xmm2,		[rsi + 0x20]
@@ -56,7 +56,9 @@ L_less_64bytes:
     ret
 
 align 16
-L_less_32bytes:
+L_lt_32bytes:
+    cmp         dl,             0x10   ;
+    jb          L_lt_16bytes
     vmovdqu     xmm0,		[rsi]  ; 16 bytes per time
     vmovdqu     xmm1,		[rsi + rdx - 0x10]  ;
     vmovdqu     [rdi],          xmm0
@@ -64,9 +66,9 @@ L_less_32bytes:
     ret
 
 align 16
-L_less_16bytes:
+L_lt_16bytes:
     cmp         dl,             0x08
-    jb          L_less_8bytes
+    jb          L_lt_8bytes
     movq        r8,             [rsi]
     movq        r9,             [rsi+rdx-0x08]
     movq        [rdi],          r8
@@ -74,15 +76,16 @@ L_less_16bytes:
     ret
 
 align 16
-L_less_8bytes:   ; [5,8)
+L_lt_8bytes:   ; [5,8)
     cmp         dl,             0x04
-    jb          L_less_4bytes
+    jbe         L_le_4bytes
     mov         r8d,            [rsi]
     mov         r9d,            [rsi+rdx-0x04]
     mov         [rdi],          r8d
     mov         [rdi+rdx-0x04], r9d
     ret
 
+align 16
 L_le_4bytes:  ; [3,4]
     cmp         dl,             0x02
     jbe         L_le_2bytes
@@ -92,14 +95,18 @@ L_le_4bytes:  ; [3,4]
     mov         [rdi+rdx-0x02], r9d
     ret
 
+align 16
 L_le_2bytes:
-
-    jb          L_less_2bytes
-    mov         r8d,            [rsi]
-    mov         r9d,            [rsi+rdx-0x02]
-    mov         [rdi],          r8d
-    mov         [rdi+rdx-0x02], r9d
-    ret                                     ; TODO:  write conflict? cache pollution?
+    cmp         dl,             0x01
+    je          L_1byte
+    mov         r8w,            [rsi]
+    mov         [rdi],          r8w
+    ret                                     
+L_1byte:
+    mov         r8b,            [rsi]
+    mov         [rdi],          r8b
+    ret         
+; TODO:  to be refined for tiny memcpy
 
 align 16
 L_ge_256:
