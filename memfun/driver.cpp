@@ -1,6 +1,6 @@
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
+#include <ctime>
 
 #include <string>
 
@@ -11,7 +11,9 @@ using namespace std;
 extern "C" {
 #endif
 
-extern char* _i_memcpy_256_unaligned(char* di, const char* si, const int dx);
+extern void * _i_memcpy_256_unaligned(char* di, const char* si, const int dx);
+
+//extern void *__memcpy_ssse3(char* di, const char* si, size_t __n);
 
 #ifdef __cplusplus
 }
@@ -28,22 +30,26 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void verify(const char* src, const char* des, 
+bool verify(const char* src, const char* des, 
         const int offset1, const int offset2, const int len,
         const int origSize) {
     for (int i = 0; i< origSize; i++) {
         if( i < offset2 || i >= (offset2 +len)) {
-            if ((*(des + i) != '\0'))
-                printf("Error at %d, should be \\0, but %c", i, *(des + i));
+            if ((*(des + i) != '\0')) {
+                printf("Copy %d . Error at %d, should be \\0, but %c\n", len, i, *(des + i));
+                return false;
+            }
         }        
-        else { // compare
-            if (*(src + offset1 - offset2 + i) != *(des + i)) {
-                printf("Error at %d, should be %c, but %c", 
-                    i, *(src + offset1 - offset2 + i), *(des + i));
+        if ( i>=offset2 && i< (offset2 + len)){ // compare
+            if (*(src + offset1 + i-offset2) != *(des + i)) {
+                printf("Copy %d . Error at %d, should be %c, but %c\n", len,
+                    i, *(src + offset1 + i), *(des + offset2 + i));
+                return false;
             }
         }
     }
-    printf("Successful!");
+    return true;
+    //printf("Copy %d Successful!\n", len);
 }
 
 void testMem() {
@@ -63,13 +69,20 @@ void testMem() {
     
     // not aligned
     {
-        int offset1 = 26;
-        int offset2 = 5;
+        srand(std::time(0)); // use current time as seed for random generator
+        int offset1 = rand() % (origSize / 2);
+        int offset2 = rand() % (origSize / 2);
+        
         const char* src = s1 + offset1; 
         char* des = s2 + offset2; 
-        int len = 256 + 128 + 64 + 32 + 16 + 9; // 505
-        _i_memcpy_256_unaligned(des, src, len);
-        verify(s1, s2, offset1, offset2, len, origSize);
+        
+        int len = rand() % (origSize / 2);       
+        for(int i=0; i < (origSize / 2); i++) {
+            memset(s2, '\0', origSize);
+            _i_memcpy_256_unaligned(des, src, i);
+            verify(s1, s2, offset1, offset2, i, origSize);
+        }  
+        printf("Successful!\n");
     }
         
     {
@@ -81,35 +94,13 @@ void testMem() {
         // break __memcpy_avx_unaligned
         memset(s2, '\0', origSize);
         
-        memcpy(des, src, 7);
-        memset(s2, '\0', origSize);
-        memcpy(des, src, 8);
-        memset(s2, '\0', origSize);
-        
-        memcpy(des, src, 15);
-        memset(s2, '\0', origSize);
-        memcpy(des, src, 16);
-        memset(s2, '\0', origSize);
-        
-        memcpy(des, src, 31);
-        memset(s2, '\0', origSize);        
-        memcpy(des, src, 32);
-        memset(s2, '\0', origSize);
-        
-        memcpy(des, src, 63);
-        memset(s2, '\0', origSize);        
-        memcpy(des, src, 64);
-        memset(s2, '\0', origSize);
-        
-        memcpy(des, src, 127);
-        memset(s2, '\0', origSize);        
-        memcpy(des, src, 128);
-        memset(s2, '\0', origSize);
-        
+        memcpy(des, src, 1);             
         memcpy(des, src, 254);
         memcpy(des, src, 511);
         memcpy(des, src, 2047);
-        memcpy(des, src, 8193);
+        //memcpy@@GLIBC_2.14
+        
+        //__memcpy_ssse3(des, src, 8193);
     }
         
     free(s2);

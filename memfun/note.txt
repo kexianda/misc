@@ -1,5 +1,15 @@
 set disassembly-flavor intel
 set disassembly-flavor att
 
+break __memcpy_avx_unaligned
 
 vmovdqu ymm1,YMMWORD PTR [rsi+0x20]
+
+
+movzbl
+movzwl
+
+-static-libgcc
+-static-libstdc++
+
+https://www.zhihu.com/question/35172305
