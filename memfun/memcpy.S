@@ -125,13 +125,13 @@ L_ge_256:
     and         r8d,            1FH
     jz          L_4ymm_loop
     vmovdqu     ymm0,		[rsi]	 ; save the first partial block
-    add         rsi,		r8
-    sub         rdx,		r8
+    add         rsi,		r8    
     vmovdqu     [rdi],          ymm0
     add         rdi,		r8
+    sub         rdx,		r8
 
-    sub		rdx,		0x80  ; 32*4 = 128 bytes
-L_4ymm_loop:
+L_4ymm_loop:    
+    sub         rdx,		0x80     ; 128 bytes per loop
     vmovdqu     ymm1,		[rsi]
     vmovdqu     ymm2,		[rsi+0x20]
     vmovdqu     ymm3,		[rsi+0x40]
@@ -142,11 +142,10 @@ L_4ymm_loop:
     vmovdqa     [rdi+0x40],	ymm3
     vmovdqa     [rdi+0x60],	ymm4
     add         rdi,		0x80
-    sub         rdx,		0x80
+    cmp         rdx,            0x80
     jae         L_4ymm_loop
-    add         rdx,		0x80
 
-L_single_ymm_loop:
+L_single_ymm_loop:                      ;[0,128) bytes
     sub         rdx,		0x20
     jb          L_remaining_bytes
     vmovdqu     ymm0,		[rsi]
@@ -157,11 +156,9 @@ L_single_ymm_loop:
 
 L_remaining_bytes:  ; <= 32 bytes
     add         rdx,    	0x20
-    add         rsi,		rdx
-    add         rdi,		rdx
-    vmovdqu     ymm0,		[rsi-0x20]
-    sub         rdi,            0x20;
-    vmovdqu     [rdi],          ymm0
+    jz          FINISH
+    vmovdqu     ymm0,		[rsi+rdx-0x20]
+    vmovdqu     [rdi+rdx-0x20], ymm0
     vzeroupper         ; end of AVX mode
 
 FINISH:
