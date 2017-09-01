@@ -14,22 +14,27 @@ extern "C" {
 
 extern void * _i_memcpy_256_unaligned(char* di, const char* si, const int dx);
 
-//extern void *__memcpy_ssse3(char* di, const char* si, size_t __n);
-
 #ifdef __cplusplus
 }
 #endif
 
-
+void debugfun();
 void testMem();
 void bench();
 /*
  *
  */
 int main(int argc, char** argv) {
+    //debugfun();
+    
+#ifdef _RUN_TEST_
+    testMem();
+#endif
 
-    //testMem();
+#ifdef _RUN_BENCHMARK_    
     bench();
+#endif
+    
     return 0;
 }
 
@@ -57,10 +62,46 @@ bool verify(const char* src, const char* des,
     //printf("Copy %d Successful!\n", len);
 }
 
+void debugfun() {
+    int origSize = 1024 * 1024 *8; //two pages
+    char* s1 = (char*) malloc(sizeof (char) * origSize);
+    char* s2 = (char*) malloc(sizeof (char) * origSize);
+    for (int i = 0; i < origSize; i++)
+        s1[i] = ('a' + i % 26);
+    memset(s2, '\0', origSize);
+
+    {    
+        int offset1 = 0;
+        int offset2 = 5;
+        
+        const char* src = s1 + offset1;
+        char* des = s2 + offset2;       
+        
+        int len = 1024 * 4;
+        memset(s2, '\0', origSize);
+        _i_memcpy_256_unaligned(des, src, len);
+        if(verify(s1, s2, offset1, offset2, len, origSize)){
+            printf("Copy %d Successful!\n", len);
+        }        
+        
+        len = 1024*1024*6+13; 
+        memset(s2, '\0', origSize);
+        memcpy(des, src, len);
+        if (verify(s1, s2, offset1, offset2, len, origSize)) {
+            printf("Copy %d Successful!\n", len);
+        }
+        memset(s2, '\0', origSize);
+        _i_memcpy_256_unaligned(des, src, len);
+        if (verify(s1, s2, offset1, offset2, len, origSize)) {
+            printf("Copy %d Successful!\n", len);
+        }
+        
+    }
+}
+
 void testMem() {
 
-    //int size = 256 + 128 + 64 + 32 + 16 + 9; // 505
-    int origSize = 1024 * 8; //two pages
+    int origSize = 1024 * 1024 * 16; 
     char* s1 = (char*) malloc(sizeof (char) * origSize);
     char* s2 = (char*) malloc(sizeof (char) * origSize);
     for (int i = 0; i < origSize; i++) 
@@ -68,8 +109,6 @@ void testMem() {
     memset(s2, '\0', origSize);
     
     {
-        //Copy 256 . Error at 576, should be \0, but n
-        //offset1 537, offset2 320, len = 256offset1 537, offset2 320, len = 256     
         int offset1 = 0;
         int offset2 = 0;
         int len = 256;
@@ -81,11 +120,11 @@ void testMem() {
         verify(s1, s2, offset1, offset2, len, origSize);     
     }
         
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
         bool suc = true;
         srand(std::time(0));
         int len = rand() % (origSize / 2);
-        int maxoffset = 128;
+        int maxoffset = 16;
 
         for(int offset1=0; offset1 <= maxoffset; offset1++) {
             for (int offset2 = 0; offset2 <= maxoffset; offset2++) {
@@ -98,10 +137,9 @@ void testMem() {
                 if (!suc) break;
             }
         }
-        if (suc) printf("successful!\n");
+        if (suc) printf("Round %d succeed!\n", i);
     }
 
-L_END:
     free(s2);
     free(s1);
 }
@@ -110,58 +148,55 @@ void warmup() {
     int size = 1024 * 1024 * 1024;
     char* s1 = (char*) malloc(sizeof (char) * size);
     char* s2 = (char*) malloc(sizeof (char) * size);
+	
+    printf("%s\n", "warming up ...");
+
     for (int i = 0; i < size; i++)
         s1[i] = ('a' + i % 26);
-
-    {
-        int blocksizes[] = {128, 512, 1024, 4096, 1024 * 1024};
-        for (int i = 0; i < 5; i++) {
-
-            const auto t1 = std::chrono::high_resolution_clock::now();
+    
+    int blocksizes[] = {128, 512, 1024, 4096, 1024 * 1024, 1024 * 1024 * 2, 1024 * 1024 * 8 };
+    {        
+        for (int i = 0; i < sizeof (blocksizes) / sizeof (int); i++) {
             int num = size / blocksizes[i];
             for (int j = 0; j < num; j++) {
                 memcpy((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);
             }
-
-            const auto t2 = std::chrono::high_resolution_clock::now();
-            const std::chrono::duration<double> td = t2 - t1;
-            double result = 1024.00 / td.count();
-            //printf("blockSize=%d,  result = %10.6f MB/s, time = %10.6f s\n", blocksizes[i], result, td.count());
         }
     }
 
     {
-        const auto t1 = std::chrono::high_resolution_clock::now();
-
-        int blocksizes[] = {128, 512, 1024, 4096, 1024 * 1024};
-        for (int i = 0; i < 5; i++) {
-
-            const auto t1 = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < sizeof (blocksizes) / sizeof (int); i++) {
             int num = size / blocksizes[i];
-            for (int j = 0; j < num; j++) {
-                _i_memcpy_256_unaligned((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);
-            }
-
-            const auto t2 = std::chrono::high_resolution_clock::now();
-            const std::chrono::duration<double> td = t2 - t1;
-            double result = 1024.00 / td.count();
-            //printf("blockSize=%d,  result = %10.6f MB/s, time = %10.6f s\n", blocksizes[i], result, td.count());
+	    int itrNum = 20;
+            for (int itr = 0; itr < itrNum; itr++) {
+                for (int j = 0; j < num; j++) {
+                    _i_memcpy_256_unaligned((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);
+                }
+	    }
         }
     }
+    
+    free(s2);
+    free(s1);
 }
+
 void bench() {
     
     warmup();
-    const int itrNum = 20;
+    const int itrNum = 50;
     int size = 1024 * 1024 * 1024;
     char* s1 = (char*) malloc(sizeof (char) * size);
     char* s2 = (char*) malloc(sizeof (char) * size);
     for (int i = 0; i < size; i++)
         s1[i] = ('a' + i % 26);
+    
+    int blocksizes[] = {8, 16, 128, 512, 1024, 
+                        4096, 1024 * 1024, 1024 * 1024 * 4, 1024 * 1024 * 8, 
+                        73, 113, 1024 * 1024 + 97};
    
     {
-        int blocksizes[] = {128, 512, 1024, 4096, 1024 * 1024};
-        for (int i = 0; i < 5; i++) {
+        
+        for (int i = 0; i < sizeof(blocksizes)/sizeof(int); i++) {
             
             const auto t1 = std::chrono::high_resolution_clock::now();
             int num = size / blocksizes[i];
@@ -175,13 +210,13 @@ void bench() {
             const auto t2 = std::chrono::high_resolution_clock::now();
             const std::chrono::duration<double> td = t2 - t1;
             double result = ((double)itrNum*(size/(1024*1024))) / td.count();
-            printf("blockSize=%d,  result = %10.6f MB/s, time = %10.6f s\n", blocksizes[i], result, td.count()); 
+            printf("glibc,memcpy:\tblockSize=%d, \t\tresult = %10.6f MB/s,\ttime = %10.6f s\n", blocksizes[i], result, td.count()); 
         }
     }
 
     {
-        int blocksizes[] = {128, 512, 1024, 4096, 1024 * 1024};
-        for (int i = 0; i < 5; i++) {
+        
+        for (int i = 0; i < sizeof (blocksizes) / sizeof (int); i++) {
 
             const auto t1 = std::chrono::high_resolution_clock::now();
             int num = size / blocksizes[i];
@@ -195,7 +230,7 @@ void bench() {
             const auto t2 = std::chrono::high_resolution_clock::now();
             const std::chrono::duration<double> td = t2 - t1;
             double result = ((double) itrNum * (size / (1024 * 1024))) / td.count();
-            printf("blockSize=%d,  result = %10.6f MB/s, time = %10.6f s\n", blocksizes[i], result, td.count());
+            printf("our poc memcpy:\tblockSize=%d,  \t\tresult = %10.6f MB/s,\ttime = %10.6f s\n", blocksizes[i], result, td.count());
         }         
     }
 }
