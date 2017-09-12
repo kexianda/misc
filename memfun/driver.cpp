@@ -25,7 +25,9 @@ void bench();
  *
  */
 int main(int argc, char** argv) {
-    //debugfun();
+   
+    debugfun();
+
     
 #ifdef _RUN_TEST_
     testMem();
@@ -108,17 +110,22 @@ void testMem() {
         s1[i] = ('a' + i%26);
     memset(s2, '\0', origSize);
     
-    {
-        int offset1 = 0;
-        int offset2 = 0;
-        int len = 256;
-        const char* src = s1 + offset1;
-        char* des = s2 + offset2;
-
-        memset(s2, '\0', origSize);
-        _i_memcpy_256_unaligned(des, src, len);
-        verify(s1, s2, offset1, offset2, len, origSize);     
-    }
+    // test small buffers
+    //TODO: fix it.
+//    {
+//        int offset1 = rand() % 16;
+//        int offset2 = rand() % 16;
+//        const char* src = s1 + offset1;
+//        char* des = s2 + offset2;
+//        
+//        int range = 4096*4;
+//
+//        for (int len = 1; len < 1024; len++) {
+//            memset(s2, '\0', range);
+//            _i_memcpy_256_unaligned(des, src, len);
+//            verify(s1, s2, offset1, offset2, len, range);     
+//        }
+//    }
         
     for (int i = 0; i < 10; i++) {
         bool suc = true;
@@ -148,7 +155,7 @@ void warmup() {
     int size = 1024 * 1024 * 1024;
     char* s1 = (char*) malloc(sizeof (char) * size);
     char* s2 = (char*) malloc(sizeof (char) * size);
-	
+    int itrNum = 20;
     printf("%s\n", "warming up ...");
 
     for (int i = 0; i < size; i++)
@@ -158,8 +165,10 @@ void warmup() {
     {        
         for (int i = 0; i < sizeof (blocksizes) / sizeof (int); i++) {
             int num = size / blocksizes[i];
-            for (int j = 0; j < num; j++) {
-                memcpy((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);
+            for (int itr = 0; itr < itrNum; itr++) {
+                for (int j = 0; j < num; j++) {
+                    memcpy((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);
+                }
             }
         }
     }
@@ -167,7 +176,7 @@ void warmup() {
     {
         for (int i = 0; i < sizeof (blocksizes) / sizeof (int); i++) {
             int num = size / blocksizes[i];
-	    int itrNum = 20;
+
             for (int itr = 0; itr < itrNum; itr++) {
                 for (int j = 0; j < num; j++) {
                     _i_memcpy_256_unaligned((s2 + blocksizes[i] * j), (s1 + blocksizes[i] * j), blocksizes[i]);

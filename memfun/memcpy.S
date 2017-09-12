@@ -7,8 +7,8 @@ section .data
 ; ==============================================
 section .text
 
-align 16
 global _i_memcpy_256_unaligned ;
+align 16
 _i_memcpy_256_unaligned:
         ; Linux ABI: RDI, RSI, RDX, RCX, R8, R9, XMM0~7
     mov         rax,            rdi	; save return address
@@ -59,15 +59,12 @@ align 16
 L_le_64bytes:                           ; (32,64]
     cmp         dl,             0x20    ;
     jbe          L_le_32bytes
-    vmovdqu     xmm0,		[rsi]  ; 16 bytes per time
-    vmovdqu     xmm1,		[rsi+0x10]
-    vmovdqu     xmm2,		[rsi+rdx-0x20]
-    vmovdqu     xmm3,		[rsi+rdx-0x10]  ;
-    vmovdqu     [rdi],          xmm0
-    vmovdqu     [rdi+ 0x10],    xmm1
-    vmovdqu     [rdi+rdx-0x20], xmm2
-    vmovdqu     [rdi+rdx-0x10], xmm3
-    ret  ; todo: use ymm
+    vmovdqu     ymm0,		[rsi]  ; 16 bytes per time
+    vmovdqu     ymm1,		[rsi+rdx-0x20]
+    vmovdqu     [rdi],          ymm0
+    vmovdqu     [rdi+rdx-0x20], ymm2
+    vzeroupper
+    ret  ; 
 
 align 16
 L_le_32bytes:                          ; (16,32]
@@ -202,11 +199,12 @@ L_non_temporal_loop:
     ; prefetchnta
     ; movups  xmm0, [rcx + rdx]       ; load
     ; movntps (-128)[rcx], xmm0       ; store
-    prefetchnta [rsi + 512]           ; in advance ; ? hinder performance ???
+    prefetchnta [rsi + 512]           ; in advance ; 
+    prefetchnta [rsi + 576]
     vmovdqu     ymm0,           [rsi]         
     vmovdqu     ymm1,           [rsi+0x20]
     vmovdqu     ymm2,           [rsi+0x40]
-    vmovdqu     ymm3,           [rsi+0x60]
+    vmovdqu     ymm3,           [rsi+0x60]    
     add         rsi,            0x80          ; 32byte * 4
     sub         rdx,            0x80
     vmovntdq    [rdi],          ymm0
