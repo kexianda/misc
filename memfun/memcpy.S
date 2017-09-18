@@ -16,10 +16,12 @@ _i_memcpy_256_unaligned:
     jae         L_ge_256 
 
     cmp         dl,             0x10 ; <=16
-    jbe         L_le_16bytes
+    ;jbe         L_le_16bytes
+    jbe         L_cpySmall
 
     cmp         dl,             0x80 ; >=128
     jbe         L_le_128bytes
+
 
 L_lt_256bytes:    ;(128, 256) bytes
     vmovdqu     ymm0,		[rsi]  ; 32 bytes per time
@@ -62,57 +64,168 @@ L_le_64bytes:                           ; (32,64]
     vmovdqu     ymm0,		[rsi]  ; 16 bytes per time
     vmovdqu     ymm1,		[rsi+rdx-0x20]
     vmovdqu     [rdi],          ymm0
-    vmovdqu     [rdi+rdx-0x20], ymm2
+    vmovdqu     [rdi+rdx-0x20], ymm1
     vzeroupper
     ret  ; 
 
 align 16
 L_le_32bytes:                          ; (16,32]
     cmp         dl,             0x10   ;
-    jbe         L_le_16bytes
+    jbe         L_cpySmall
     vmovdqu     xmm0,		[rsi]  ; 16 bytes per time
     vmovdqu     xmm1,		[rsi + rdx - 0x10]  ;
     vmovdqu     [rdi],          xmm0
     vmovdqu     [rdi+rdx-0x10], xmm1
     ret
 
-align 16
-L_le_16bytes:                           ; (8,16]
-    cmp         dl,             0x08
-    jbe          L_le_8bytes
-    mov         r8,             [rsi]
-    mov         r9,             [rsi+rdx-0x08]
-    mov         [rdi],          r8
-    mov         [rdi+rdx-0x08], r9
-    ret
+
+; ------------------------
+; jump table
 
 align 16
-L_le_8bytes:                            ; (4,8]
-    cmp         dl,             0x04
-    jbe         L_le_4bytes
-    mov         r8d,            [rsi]
-    mov         r9d,            [rsi+rdx-0x04]
-    mov         [rdi],          r8d
-    mov         [rdi+rdx-0x04], r9d
+L_cpySmallTab:
+    dq  L_cpySmallTab
+    dq  L_1B
+    dq  L_2B
+    dq  L_3B
+    dq  L_4B
+    dq  L_5B
+    dq  L_6B
+    dq  L_7B
+    dq  L_8B
+    dq  L_9B
+    dq  L_10B
+    dq  L_11B
+    dq  L_12B
+    dq  L_13B
+    dq  L_14B
+    dq  L_15B
+    dq  L_16B
+
+align   16
+L_cpySmall:
+    mov r10,   [L_cpySmallTab + rdx*8]      ;L_cpySmallTab[rdx*8]
+    jmp r10
+
+L_1B:
+    mov         r10b,           [rsi]   ; load 1 byte
+    mov         [rdi],          r10b    ; store 1 byte
     ret
 
-align 16
-L_le_4bytes:                            ; [2,4]
-    cmp         dl,             0x01
-    jbe         L_le_1byte
-    mov         r8w,            [rsi]
-    mov         r9w,            [rsi+rdx-0x02]
-    mov         [rdi],          r8w
-    mov         [rdi+rdx-0x02], r9w
+L_2B:
+    mov         r10w,           [rsi]   ; load 2 bytes
+    mov         [rdi],          r10w    ; store 2 bytes
     ret
 
-L_le_1byte:                             ; [0,1]
-    jb          L_finish_small
-    mov         r8b,            [rsi]
-    mov         [rdi],          r8b
-L_finish_small:
+align   16
+L_3B:
+    mov        r10w,           [rsi]    ; load 2 bytes
+    mov        r11b,           [rsi+2]  ; load 1 byte
+    mov        [rdi],          r10w     ; store 2 bytes
+    mov        [rdi+2],        r11b     ; store 1 byte
     ret
-; TODO:  to be refined for tiny memcpy
+
+L_4B:
+    mov         r10d,           [rsi]   ; load 4 bytes
+    mov         [rdi],          r10d    ; store 4 bytes
+    ret
+align   16
+L_5B:
+    mov         r10d,           [rsi]   ; load 4 bytes
+    mov         r11b,           [rsi+4] ; load 1 byte
+    mov         [rdi],          r10d    ; store 4 bytes
+    mov         [rdi+4],        r11b    ; store 1 byte
+    ret
+
+L_6B:
+    mov         r10d,           [rsi]   ; load 4 bytes
+    mov         r11w,           [rsi+4] ; load 2 bytes
+    mov         [rdi],          r10d    ; store 4 bytes
+    mov         [rdi+4],        r11w    ; store 2 bytes
+    ret
+
+align   16
+L_7B:
+    mov         r10d,           [rsi]   ; load 4 bytes
+    mov         r11w,           [rsi+4] ; load 2 bytes
+    mov         [rdi],          r10d    ; store 4 bytes
+    mov         [rdi+4],        r11w    ; store 2 bytes
+    mov         r10b,           [rsi+6] ; load 1 byte
+    mov         [rdi+6],        r10b    ; store 1 byte
+    ret
+
+L_8B:
+    mov         r10,           [rsi]    ; load 8 bytes
+    mov         [rdi],         r10      ; store 8 bytes
+    ret 
+
+align   16
+L_9B:
+    mov         r10,           [rsi]    ; load 8 bytes
+    mov         r11b,          [rsi+8]  ; load 1 byte 
+    mov         [rdi],         r10      ; store 8 bytes
+    mov         [rdi+8],       r11b     ; store 1 byte
+    ret
+L_10B:
+    mov         r10,           [rsi]    ; load 8 bytes
+    mov         r11w,          [rsi+8]  ; load 2 bytes
+    mov         [rdi],         r10      ; store 8 bytes
+    mov         [rdi+8],       r11w     ; store 2 bytes
+    ret
+
+align   16
+L_11B:
+    mov         r10,           [rsi]    ; load 8 bytes
+    mov         r11w,          [rsi+8]  ; load 2 bytes
+    mov         [rdi],         r10      ; store 8 bytes
+    mov         [rdi+8],       r11w     ; store 2 bytes
+    mov         r10b,          [rsi+10] ; load 1 byte
+    mov         [rdi+10],      r10b     ; store 1 byte
+    ret
+
+L_12B:
+    mov         r10,            [rsi]   ; load 8 bytes
+    mov         r11d,           [rsi+8] ; load 4 bytes
+    mov         [rdi],          r10     ; store 8 bytes
+    mov         [rdi+8],        r11d    ; store 4 bytes
+    ret
+
+align   16
+L_13B:
+    mov         r10,            [rsi]   ; load 8 bytes
+    mov         r11d,           [rsi+8] ; load 4 bytes
+    mov         [rdi],          r10     ; store 8 bytes
+    mov         [rdi+8],        r11d    ; store 4 bytes
+    mov         r10b,           [rsi+12]; load 1 byte
+    mov         [rdi+12],       r10b    ; store 1 byte
+    ret
+
+L_14B:
+    mov         r10,            [rsi]   ; load 8 bytes
+    mov         [rdi],          r10     ; store 8 bytes
+    mov         r11d,           [rsi+8] ; load 4 bytes
+    mov         [rdi+8],        r11d    ; store 4 bytes
+    mov         r10w,           [rsi+12]; load 2 bytes
+    mov         [rdi+12],       r10w    ; store 2 bytes
+    ret
+
+align   16
+L_15B:
+    mov         r10,            [rsi]   ; load 8 bytes
+    mov         r11d,           [rsi+8] ; load 4 bytes
+    mov         [rdi],          r10     ; store 8 bytes    
+    mov         [rdi+8],        r11d    ; store 4 bytes
+    mov         r10w,           [rsi+12]; load 2 bytes
+    mov         r11b,           [rsi+14]; load 1 byte
+    mov         [rdi+12],       r10w    ; store 2 bytes    
+    mov         [rdi+14],       r11b    ; store 1 byte
+    ret
+
+L_16B:
+    movdqu      xmm0,          [rsi]
+    movdqu      [rdi],         xmm0
+    ret
+; ------------------------------------------------
 
 align 16
 L_ge_256:
