@@ -11,7 +11,7 @@ TZ=`/bin/ls -l /etc/localtime|cut -d"/" -f8,9`
 pub=`cat ~/.ssh/id_rsa.pub`
 
 # local port for login to container
-SSH_PORT=8322
+SSH_PORT=8122
 
 # mapping host's user into the container and start sshd
 dev_dir=~/.dev
@@ -28,7 +28,7 @@ if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then
     useradd --no-log-init -u ${USER_ID} -g ${USER_NAME} ${USER_NAME} -s /bin/bash
     install -d -m 0755 -o ${USER_NAME} -g ${USER_NAME} /home/${USER_NAME}
     sudo usermod -aG sudo ${USER_NAME} && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-    echo '${USER_NAME}:nudata' | chpasswd
+    echo '${USER_NAME}:password' | chpasswd
 fi
 
 ulimit -c unlimited
@@ -53,7 +53,7 @@ docker run -d -p ${SSH_PORT}:22 \
 
 # for login
 if [ `uname` == 'Linux' ]; then
-    sed -i '/0.0.0.0:8322/d' ~/.ssh/known_hosts
+    sed -i '/0.0.0.0:8122/d' ~/.ssh/known_hosts
 else
-    sed -i.bak '/0.0.0.0:8322/d' ~/.ssh/known_hosts
+    sed -i.bak '/0.0.0.0:8122/d' ~/.ssh/known_hosts
 fi
